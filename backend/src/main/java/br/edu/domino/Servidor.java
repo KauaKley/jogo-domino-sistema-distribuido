@@ -18,6 +18,7 @@ public class Servidor {
     static ManagedChannel canal;
     static JogoGrpc.JogoBlockingStub par;
     static long versao = 0;
+    private static boolean parIndisponivel;
 
     public static void main(String[] args) throws Exception {
         String papel = args.length > 0 ? args[0] : "principal";
@@ -39,8 +40,9 @@ public class Servidor {
                     try {
                         par.withDeadlineAfter(1200, TimeUnit.MILLISECONDS)
                                 .pulso(PulsoPedido.newBuilder().setEpoca(epoca).build());
-                    } catch (Exception ex) {
-                        System.err.println("Par indisponível: " + ex.getMessage());
+                        registrarParDisponivel();
+                    } catch (StatusRuntimeException ex) {
+                        registrarFalhaDoPar("pulso", ex);
                     }
                 } else if (!papel.equalsIgnoreCase("principal") && recebeuPulso
                         && System.currentTimeMillis() - ultimoPulso > 4500) {
@@ -66,10 +68,26 @@ public class Servidor {
         try {
             Confirmacao c = par.withDeadlineAfter(1800, TimeUnit.MILLISECONDS).replicar(Instantaneo.newBuilder()
                     .setJson(JSON.toJson(MOTOR.estado)).setVersao(versao).setEpoca(epoca).build());
+            registrarParDisponivel();
             if (!c.getOk())
                 System.err.println("Réplica rejeitada: " + c.getMensagem());
-        } catch (Exception e) {
-            System.err.println("Falha na replicação: " + e.getMessage());
+        } catch (StatusRuntimeException e) {
+            registrarFalhaDoPar("replicação", e);
+        }
+    }
+
+    private static void registrarFalhaDoPar(String operacao, StatusRuntimeException erro) {
+        if (!parIndisponivel) {
+            parIndisponivel = true;
+            System.err.println("Par indisponível durante " + operacao + ": " + erro.getMessage()
+                    + ". Servidor ativo segue atendendo sem redundância.");
+        }
+    }
+
+    private static void registrarParDisponivel() {
+        if (parIndisponivel) {
+            parIndisponivel = false;
+            System.out.println("Comunicação com o par restabelecida.");
         }
     }
 
