@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dominó em Duplas</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>🁣 Dominó em Duplas</h1>
+        <p>4 jogadores • 2 duplas • até 3 pontos</p>
+      </header>
+      <section id="acesso" class="painel">
+        <h2>Entrar no jogo</h2>
+        <label
+          >Seu nome<input id="nome" maxlength="32" placeholder="Ex.: Ana"
+        /></label>
+        <div class="acoes">
+          <button id="criar">Criar sala</button
+          ><input
+            id="codigo"
+            maxlength="6"
+            placeholder="Código da sala"
+          /><button id="entrar">Entrar</button>
+        </div>
+      </section>
+      <section id="partida" hidden>
+        <div class="topo painel">
+          <div>
+            <strong>Sala <span id="sala"></span></strong>
+            <button id="copiar">Copiar código</button>
+            <button id="compartilhar">Copiar link da sala</button>
+          </div>
+          <span id="fase"></span
+          ><button id="sair" class="secundario">Sair</button>
+        </div>
+        <div class="placar">
+          <div>Dupla A <b id="pa">0</b></div>
+          <div>Rodada <b id="rodada">0</b></div>
+          <div>Dupla B <b id="pb">0</b></div>
+        </div>
+        <div id="jogadores" class="jogadores"></div>
+        <div class="painel">
+          <h2>Mesa</h2>
+          <div id="mesa" class="mesa"></div>
+          <p id="pontas"></p>
+        </div>
+        <div class="painel">
+          <h2>Suas peças</h2>
+          <p id="vez"></p>
+          <div id="mao" class="mao"></div>
+          <p id="nome-jogador" class="nome-jogador"></p>
+          <div class="acoes">
+            <button id="esquerda">Jogar à esquerda</button
+            ><button id="direita">Jogar à direita</button
+            ><button id="pronto">Estou pronto</button>
+          </div>
+        </div>
+        <div class="painel">
+          <h2>Histórico</h2>
+          <ul id="eventos"></ul>
+        </div>
+      </section>
+      <p id="aviso" role="status"></p>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

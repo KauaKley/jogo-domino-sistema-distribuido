@@ -1,0 +1,10 @@
+syntax = "proto3";
+package domino;
+option java_package = "br.edu.domino.rpc";
+option java_multiple_files = true;
+service Jogo { rpc Executar (Pedido) returns (Resposta); rpc Replicar (Instantaneo) returns (Confirmacao); rpc Pulso (PulsoPedido) returns (Confirmacao); }
+message Pedido { string acao = 1; string sala = 2; string jogador = 3; string nome = 4; int32 a = 5; int32 b = 6; string lado = 7; string operacao = 8; }
+message Resposta { bool sucesso = 1; string mensagem = 2; string dados_json = 3; int64 versao = 4; }
+message Instantaneo { string json = 1; int64 versao = 2; string epoca = 3; }
+message PulsoPedido { string epoca = 1; }
+message Confirmacao { bool ok = 1; string mensagem = 2; }
