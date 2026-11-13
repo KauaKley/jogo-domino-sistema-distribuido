@@ -40,8 +40,8 @@ public class Motor {
         if ("ESTADO".equals(acao))
             return ok("Estado atualizado", s, id);
         if ("SAIR".equals(acao)) {
+            s.jogadores.remove(j);
             if (s.fase.equals("AGUARDANDO")) {
-                s.jogadores.remove(j);
                 s.evento(j.nome + " saiu");
             } else if (!s.fase.equals("FINALIZADA"))
                 encerrar(s, 1 - (j.assento % 2), "Abandono de " + j.nome);

@@ -60,7 +60,7 @@ async function agir(acao, extra = {}) {
   ocupado = true;
   try {
     const d = await api(acao, extra);
-    aviso(d.mensagem);
+    aviso(acao === "JOGAR" ? "" : d.mensagem);
   } catch (e) {
     aviso(e.message);
   } finally {
@@ -189,6 +189,9 @@ function desenhar() {
   $("acesso").hidden = true;
   $("partida").hidden = false;
   $("sala").textContent = sala;
+  const salaCheia = estado.jogadores.length >= 4;
+  $("copiar").hidden = salaCheia;
+  $("compartilhar").hidden = salaCheia;
   $("fase").textContent = estado.fase;
   $("pa").textContent = estado.pontos[0];
   $("pb").textContent = estado.pontos[1];
