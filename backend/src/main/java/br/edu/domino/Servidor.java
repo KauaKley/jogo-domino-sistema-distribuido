@@ -41,8 +41,8 @@ public class Servidor {
                         par.withDeadlineAfter(1200, TimeUnit.MILLISECONDS)
                                 .pulso(PulsoPedido.newBuilder().setEpoca(epoca).build());
                         registrarParDisponivel();
-                    } catch (StatusRuntimeException ex) {
-                        registrarFalhaDoPar("pulso", ex);
+                    } catch (StatusRuntimeException erro) {
+                        registrarFalhaDoPar("pulso", erro);
                     }
                 } else if (!papel.equalsIgnoreCase("principal") && recebeuPulso
                         && System.currentTimeMillis() - ultimoPulso > 4500) {
@@ -66,13 +66,13 @@ public class Servidor {
     private static void replicar() {
         MOTOR.estado.versao = ++versao;
         try {
-            Confirmacao c = par.withDeadlineAfter(1800, TimeUnit.MILLISECONDS).replicar(Instantaneo.newBuilder()
+            Confirmacao confirmacaoReplica = par.withDeadlineAfter(1800, TimeUnit.MILLISECONDS).replicar(Instantaneo.newBuilder()
                     .setJson(JSON.toJson(MOTOR.estado)).setVersao(versao).setEpoca(epoca).build());
             registrarParDisponivel();
-            if (!c.getOk())
-                System.err.println("Réplica rejeitada: " + c.getMensagem());
-        } catch (StatusRuntimeException e) {
-            registrarFalhaDoPar("replicação", e);
+            if (!confirmacaoReplica.getOk())
+                System.err.println("Réplica rejeitada: " + confirmacaoReplica.getMensagem());
+        } catch (StatusRuntimeException erro) {
+            registrarFalhaDoPar("replicação", erro);
         }
     }
 
@@ -93,7 +93,7 @@ public class Servidor {
 
     static class Servico extends JogoGrpc.JogoImplBase {
         @Override
-        public void executar(Pedido p, StreamObserver<Resposta> obs) {
+        public void executar(Pedido pedido, StreamObserver<Resposta> obs) {
             LOCK.lock();
             try {
                 if (!ativo) {
@@ -101,31 +101,31 @@ public class Servidor {
                     obs.onCompleted();
                     return;
                 }
-                Motor.Resultado r = MOTOR.executar(p.getAcao(), p.getSala(), p.getJogador(), p.getNome(), p.getA(),
-                        p.getB(), p.getLado(), p.getOperacao());
+                Motor.Resultado resultadoAcao = MOTOR.executar(pedido.getAcao(), pedido.getSala(), pedido.getJogador(), pedido.getNome(), pedido.getA(),
+                        pedido.getB(), pedido.getLado(), pedido.getOperacao());
 
-                if (r.ok())
+                if (resultadoAcao.ok())
                     Servidor.replicar();
-                obs.onNext(Resposta.newBuilder().setSucesso(r.ok()).setMensagem(r.mensagem()).setDadosJson(r.json())
+                obs.onNext(Resposta.newBuilder().setSucesso(resultadoAcao.ok()).setMensagem(resultadoAcao.mensagem()).setDadosJson(resultadoAcao.json())
                         .setVersao(versao).build());
                 obs.onCompleted();
-            } catch (Exception e) {
-                obs.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            } catch (Exception erro) {
+                obs.onError(Status.INTERNAL.withDescription(erro.getMessage()).asRuntimeException());
             } finally {
                 LOCK.unlock();
             }
         }
 
         @Override
-        public void replicar(Instantaneo i, StreamObserver<Confirmacao> obs) {
+        public void replicar(Instantaneo instantaneoRecebido, StreamObserver<Confirmacao> obs) {
             LOCK.lock();
             try {
-                boolean ok = !ativo && i.getVersao() >= versao;
+                boolean ok = !ativo && instantaneoRecebido.getVersao() >= versao;
                 if (ok) {
-                    Modelo.Estado novo = JSON.fromJson(i.getJson(), Modelo.Estado.class);
+                    Modelo.Estado novo = JSON.fromJson(instantaneoRecebido.getJson(), Modelo.Estado.class);
                     MOTOR.estado = novo;
-                    versao = i.getVersao();
-                    epoca = i.getEpoca();
+                    versao = instantaneoRecebido.getVersao();
+                    epoca = instantaneoRecebido.getEpoca();
                     ultimoPulso = System.currentTimeMillis();
                     recebeuPulso = true;
                 }
@@ -138,13 +138,13 @@ public class Servidor {
         }
 
         @Override
-        public void pulso(PulsoPedido p, StreamObserver<Confirmacao> obs) {
+        public void pulso(PulsoPedido pedidoPulso, StreamObserver<Confirmacao> obs) {
             LOCK.lock();
             try {
                 boolean ok = !ativo;
                 if (ok) {
                     ultimoPulso = System.currentTimeMillis();
-                    epoca = p.getEpoca();
+                    epoca = pedidoPulso.getEpoca();
                 }
                 obs.onNext(Confirmacao.newBuilder().setOk(ok).build());
                 obs.onCompleted();

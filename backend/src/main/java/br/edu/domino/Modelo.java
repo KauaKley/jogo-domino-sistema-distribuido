@@ -1,5 +1,6 @@
 package br.edu.domino;
 
+import com.google.gson.annotations.SerializedName;
 import java.util.*;
 
 public final class Modelo {
@@ -7,26 +8,29 @@ public final class Modelo {
     }
 
     public static class Peca {
-        public int a, b;
+        @SerializedName("a")
+        public int ladoEsquerdoPeca;
+        @SerializedName("b")
+        public int ladoDireitoPeca;
 
         public Peca() {
         }
 
-        public Peca(int a, int b) {
-            this.a = a;
-            this.b = b;
+        public Peca(int ladoEsquerdoPeca, int ladoDireitoPeca) {
+            this.ladoEsquerdoPeca = ladoEsquerdoPeca;
+            this.ladoDireitoPeca = ladoDireitoPeca;
         }
 
         public boolean bucha() {
-            return a == b;
+            return ladoEsquerdoPeca == ladoDireitoPeca;
         }
 
-        public boolean contem(int n) {
-            return a == n || b == n;
+        public boolean contem(int valorProcurado) {
+            return ladoEsquerdoPeca == valorProcurado || ladoDireitoPeca == valorProcurado;
         }
 
         public String toString() {
-            return "[" + a + "|" + b + "]";
+            return "[" + ladoEsquerdoPeca + "|" + ladoDireitoPeca + "]";
         }
     }
 
@@ -50,15 +54,15 @@ public final class Modelo {
         public Map<String, Boolean> operacoes = new HashMap<>();
 
         public Jogador porId(String id) {
-            return jogadores.stream().filter(j -> j.id.equals(id)).findFirst().orElse(null);
+            return jogadores.stream().filter(jogador -> jogador.id.equals(id)).findFirst().orElse(null);
         }
 
-        public Jogador porAssento(int a) {
-            return jogadores.stream().filter(j -> j.assento == a).findFirst().orElse(null);
+        public Jogador porAssento(int numeroAssento) {
+            return jogadores.stream().filter(jogador -> jogador.assento == numeroAssento).findFirst().orElse(null);
         }
 
-        public void evento(String e) {
-            eventos.add(e);
+        public void evento(String mensagemEvento) {
+            eventos.add(mensagemEvento);
             if (eventos.size() > 80)
                 eventos.remove(0);
         }

@@ -14,35 +14,35 @@ const enderecos = (
   process.env.SERVIDORES || "localhost:50051,localhost:50052"
 ).split(",");
 const clientes = enderecos.map(
-  (e) => new Jogo(e, grpc.credentials.createInsecure()),
+  (enderecoServidor) => new Jogo(enderecoServidor, grpc.credentials.createInsecure()),
 );
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(dir, "public")));
 let preferido = 0;
-function chamada(cliente, p) {
+function chamada(cliente, pedido) {
   return new Promise((resolve, reject) =>
-    cliente.Executar(p, { deadline: Date.now() + 2000 }, (e, r) =>
-      e ? reject(e) : resolve(r),
+    cliente.Executar(pedido, { deadline: Date.now() + 2000 }, (erro, respostaGrpc) =>
+      erro ? reject(erro) : resolve(respostaGrpc),
     ),
   );
 }
 app.post("/api", async (req, res) => {
-  const p = req.body || {};
-  for (let t = 0; t < clientes.length; t++) {
-    const i = (preferido + t) % clientes.length;
+  const pedido = req.body || {};
+  for (let tentativa = 0; tentativa < clientes.length; tentativa++) {
+    const indiceServidor = (preferido + tentativa) % clientes.length;
     try {
-      const r = await chamada(clientes[i], p);
-      if (r.mensagem === "SERVIDOR_RESERVA") continue;
-      preferido = i;
+      const respostaGrpc = await chamada(clientes[indiceServidor], pedido);
+      if (respostaGrpc.mensagem === "SERVIDOR_RESERVA") continue;
+      preferido = indiceServidor;
       return res.json({
-        ok: r.sucesso,
-        mensagem: r.mensagem,
-        estado: r.dadosJson ? JSON.parse(r.dadosJson) : null,
-        versao: r.versao,
+        ok: respostaGrpc.sucesso,
+        mensagem: respostaGrpc.mensagem,
+        estado: respostaGrpc.dadosJson ? JSON.parse(respostaGrpc.dadosJson) : null,
+        versao: respostaGrpc.versao,
       });
-    } catch (e) {
-      console.error("Servidor", enderecos[i], e.message);
+    } catch (erro) {
+      console.error("Servidor", enderecos[indiceServidor], erro.message);
     }
   }
   res.status(503).json({
